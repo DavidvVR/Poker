@@ -13,6 +13,9 @@ export function ChatPanel({ roomId, playerName }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [hasNewMessages, setHasNewMessages] = useState(false);
+  const [lastSeenCount, setLastSeenCount] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -77,6 +80,19 @@ export function ChatPanel({ roomId, playerName }: ChatPanelProps) {
     }
   }, [messages]);
 
+  useEffect(() => {
+    if (!isOpen && messages.length > lastSeenCount) {
+      setHasNewMessages(true);
+    }
+  }, [messages, isOpen, lastSeenCount]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setHasNewMessages(false);
+      setLastSeenCount(messages.length);
+    }
+  }, [isOpen, messages.length]);
+
   const handleSend = async (event: FormEvent) => {
     event.preventDefault();
     const text = draft.trim();
@@ -112,34 +128,45 @@ export function ChatPanel({ roomId, playerName }: ChatPanelProps) {
   };
 
   return (
-    <div className="chat-panel">
-      <div className="chat-header">
-        <strong>Chat de mesa</strong>
-      </div>
-      <div className="chat-messages" role="log" aria-live="polite">
-        {messages.length === 0
-          ? <p className="chat-empty">Nadie ha escrito nada todavía.</p>
-          : messages.map((msg) => (
-              <div key={msg.id} className={`chat-msg ${msg.playerName === playerName ? "mine" : ""}`}>
-                <span className="chat-author">{msg.playerName}</span>
-                <span className="chat-text">{msg.message}</span>
-              </div>
-            ))}
-        <div ref={bottomRef} />
-      </div>
-      <form className="chat-form" onSubmit={handleSend}>
-        <input
-          aria-label="Escribe un mensaje"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Escribe un mensaje…"
-          maxLength={200}
-          disabled={isSending}
-        />
-        <button type="submit" disabled={!draft.trim() || isSending}>
-          {isSending ? "…" : "→"}
-        </button>
-      </form>
+    <div className={`chat-shell ${isOpen ? "open" : ""}`}>
+      {isOpen && (
+        <div className="chat-panel">
+          <div className="chat-header">
+            <strong>Chat de mesa</strong>
+            <button type="button" className="chat-close" onClick={() => setIsOpen(false)} aria-label="Cerrar chat">
+              ×
+            </button>
+          </div>
+          <div className="chat-messages" role="log" aria-live="polite">
+            {messages.length === 0
+              ? <p className="chat-empty">Nadie ha escrito nada todavía.</p>
+              : messages.map((msg) => (
+                  <div key={msg.id} className={`chat-msg ${msg.playerName === playerName ? "mine" : ""}`}>
+                    <span className="chat-author">{msg.playerName}</span>
+                    <span className="chat-text">{msg.message}</span>
+                  </div>
+                ))}
+            <div ref={bottomRef} />
+          </div>
+          <form className="chat-form" onSubmit={handleSend}>
+            <input
+              aria-label="Escribe un mensaje"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Escribe un mensaje…"
+              maxLength={200}
+              disabled={isSending}
+            />
+            <button type="submit" disabled={!draft.trim() || isSending}>
+              {isSending ? "…" : "→"}
+            </button>
+          </form>
+        </div>
+      )}
+      <button type="button" className={`chat-fab ${hasNewMessages ? "has-new" : ""}`} onClick={() => setIsOpen((value) => !value)} aria-label={isOpen ? "Cerrar chat" : "Abrir chat"}>
+        <span>💬</span>
+        {hasNewMessages && !isOpen && <span className="chat-badge">{Math.max(messages.length - lastSeenCount, 1)}</span>}
+      </button>
     </div>
   );
 }
