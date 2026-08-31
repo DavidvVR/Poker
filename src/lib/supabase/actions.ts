@@ -23,6 +23,8 @@ export async function recordAction({ gameId, userName, action, amount }: { gameI
       currentTurnName: string | null;
       roundStage?: string;
       roundLabel?: string;
+      status?: string;
+      resultMessage?: string;
     };
   };
 }

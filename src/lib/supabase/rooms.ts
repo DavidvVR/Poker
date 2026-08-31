@@ -84,5 +84,6 @@ export async function getRoomState(code: string) {
   return payload as {
     room: RoomSummary;
     players: RoomPlayerSummary[];
+    gameId: string | null;
   };
 }

@@ -20,6 +20,7 @@ export function PokerApp() {
   const [isStartingGame, setIsStartingGame] = useState(false);
   const [players, setPlayers] = useState<RoomPlayerSummary[]>([]);
   const [gameId, setGameId] = useState<string | null>(null);
+  const [realtimeStatus, setRealtimeStatus] = useState("Conectando");
 
   const enter = async (event: FormEvent, create = false) => {
     event.preventDefault();
@@ -79,14 +80,21 @@ export function PokerApp() {
     }
 
     let isCanceled = false;
+    let refreshVersion = 0;
     const client = createClient();
     const channel = client.channel(`room-${roomId}`);
 
     const refreshPlayers = async () => {
+      const requestVersion = ++refreshVersion;
       try {
         const data = await getRoomState(roomCode);
-        if (!isCanceled) {
+        if (!isCanceled && requestVersion === refreshVersion) {
           setPlayers(data.players ?? []);
+          if (data.gameId) {
+            setGameId(data.gameId);
+            setNotice("");
+            setScreen("table");
+          }
         }
       } catch (error) {
         console.error(error);
@@ -101,11 +109,20 @@ export function PokerApp() {
       void refreshPlayers();
     });
 
-    void channel.subscribe();
+    channel.on("postgres_changes", { event: "INSERT", schema: "public", table: "games", filter: `room_id=eq.${roomId}` }, () => {
+      void refreshPlayers();
+    });
+
+    void channel.subscribe((status) => {
+      if (status === "SUBSCRIBED") setRealtimeStatus("En vivo");
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") setRealtimeStatus("Reconectando");
+      if (status === "CLOSED") setRealtimeStatus("Desconectado");
+    });
     void refreshPlayers();
 
     return () => {
       isCanceled = true;
+      refreshVersion += 1;
       void client.removeChannel(channel);
     };
   }, [roomCode, roomId, screen]);
@@ -155,7 +172,7 @@ export function PokerApp() {
   };
 
   if (screen === "table") {
-    return <PokerTable roomCode={roomCode} gameId={gameId ?? ""} playerName={name} onLeave={() => setScreen("home")} />;
+    return <PokerTable roomCode={roomCode} roomId={roomId} gameId={gameId ?? ""} playerName={name} onLeave={() => setScreen("home")} />;
   }
 
   return (
@@ -238,6 +255,7 @@ export function PokerApp() {
           <div className="players-card">
             <div className="players-header">
               <strong>Jugadores en la sala</strong>
+              <span className={`realtime-indicator ${realtimeStatus === "En vivo" ? "online" : ""}`}>{realtimeStatus}</span>
               <span>{players.length} {players.length === 1 ? "jugador" : "jugadores"}</span>
             </div>
 

@@ -214,7 +214,21 @@ export async function GET(request: NextRequest) {
 
     const players = await loadPlayers(adminClient, roomData.id, roomData.host_id);
 
-    return NextResponse.json({ room: { id: roomData.id, code: roomData.code, status: roomData.status, hostId: roomData.host_id }, players });
+    const { data: gameData, error: gameError } = await adminClient
+      .from("games")
+      .select("id")
+      .eq("room_id", roomData.id)
+      .maybeSingle();
+
+    if (gameError) {
+      return NextResponse.json({ error: getErrorMessage(gameError) }, { status: 400 });
+    }
+
+    return NextResponse.json({
+      room: { id: roomData.id, code: roomData.code, status: roomData.status, hostId: roomData.host_id },
+      players,
+      gameId: gameData?.id ?? null,
+    });
   } catch (error) {
     return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }

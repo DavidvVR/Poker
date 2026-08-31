@@ -1,0 +1,400 @@
+.seat-roles {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  margin-top: 5px;
+}
+
+.seat-roles span {
+  display: grid;
+  place-items: center;
+  min-width: 23px;
+  height: 23px;
+  padding: 0 5px;
+  border: 2px solid #d6b45e;
+  border-radius: 50%;
+  background: #f4efe2;
+  box-shadow: 0 2px 5px #0005;
+  color: #171716;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.hand-result-panel {
+  display: grid !important;
+  gap: 12px !important;
+  margin-bottom: 12px;
+  padding: 16px;
+  border: 1px solid rgba(232, 185, 81, 0.35);
+  border-radius: 8px;
+  background: linear-gradient(135deg, #282113, #171716);
+  text-align: left;
+}
+
+.hand-result-heading {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.hand-result-heading strong {
+  font-family: Georgia, serif;
+  font-size: 22px;
+}
+
+.hand-result-panel > p {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.hand-result-stats {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px !important;
+}
+
+.hand-result-stats > span {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #111;
+}
+
+.hand-result-stats small,
+.hand-result-stats strong {
+  display: block;
+}
+
+.hand-result-stats small {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.hand-result-stats strong {
+  margin-top: 4px;
+}
+
+/* ── stack del jugador ─────────────────────────────────── */
+
+.my-stack-pill {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 6px 10px;
+  border: 1px solid rgba(232, 185, 81, 0.3);
+  border-radius: 999px;
+  background: rgba(232, 185, 81, 0.07);
+  font-size: 13px;
+}
+
+.my-stack-pill span {
+  color: var(--muted);
+  font-size: 11px;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.my-stack-pill strong {
+  color: var(--gold);
+  font-weight: 800;
+}
+
+.my-stack-pill small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+/* ── animaciones ───────────────────────────────────────── */
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.85) translateY(6px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 185, 81, 0); }
+  50%       { box-shadow: 0 0 0 6px rgba(232, 185, 81, 0.18); }
+}
+
+.player.active .avatar,
+.player.active .avatar.warm,
+.player.active .avatar.blue {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.hand-result-panel {
+  animation: popIn 0.25s ease-out;
+}
+
+.round-banner {
+  animation: slideDown 0.2s ease-out;
+}
+
+.chat-msg {
+  animation: slideDown 0.15s ease-out;
+}
+
+/* ── chat de mesa ──────────────────────────────────────── */
+
+.chat-panel {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  max-width: 580px;
+  height: 300px;
+  margin: 8px auto 0;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #171716;
+  overflow: hidden;
+}
+
+.chat-header {
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.chat-messages {
+  padding: 10px 14px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+.chat-empty {
+  margin: auto;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.chat-msg {
+  display: flex;
+  flex-direction: column;
+  max-width: 80%;
+}
+
+.chat-msg.mine {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.chat-author {
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 2px;
+  letter-spacing: 0.4px;
+}
+
+.chat-msg.mine .chat-author {
+  color: #e8b951aa;
+}
+
+.chat-text {
+  display: inline-block;
+  padding: 7px 11px;
+  border-radius: 14px;
+  border-bottom-left-radius: 4px;
+  background: rgba(255, 255, 255, 0.07);
+  font-size: 13px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.chat-msg.mine .chat-text {
+  border-bottom-left-radius: 14px;
+  border-bottom-right-radius: 4px;
+  background: rgba(232, 185, 81, 0.14);
+  color: #f5dfa0;
+}
+
+.chat-form {
+  display: flex;
+  gap: 8px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--line);
+}
+
+.chat-form input {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.chat-form button {
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--gold);
+  color: #201804;
+  font-weight: 800;
+  font-size: 16px;
+}
+
+.new-hand-primary {
+  border-color: var(--gold) !important;
+  background: var(--gold) !important;
+  color: #201804 !important;
+}
+
+.action-panel button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.realtime-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.realtime-indicator::before {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #d09262;
+  content: "";
+}
+
+.realtime-indicator.online::before {
+  background: #67c492;
+  box-shadow: 0 0 0 3px rgba(103, 196, 146, 0.14);
+}
+
+@media (max-width: 640px) {
+  .table-page {
+    padding: 14px 10px 24px;
+  }
+
+  .table-header .brand {
+    font-size: 18px;
+  }
+
+  .table-insights {
+    margin-top: 16px;
+  }
+
+  .table-status {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .table-status div {
+    padding: 8px;
+  }
+
+  .table-status div:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .felt {
+    height: 390px;
+    border-width: 10px;
+    border-radius: 195px;
+  }
+
+  .board-label {
+    top: 122px;
+  }
+
+  .cards {
+    top: 168px;
+    gap: 4px;
+  }
+
+  .top {
+    top: 22px;
+  }
+
+  .right {
+    right: -12px;
+    top: 158px;
+  }
+
+  .bottom {
+    bottom: 12px;
+  }
+
+  .player {
+    max-width: 105px;
+  }
+
+  .player small {
+    font-size: 10px;
+  }
+
+  .seat-roles {
+    margin-top: 3px;
+  }
+
+  .action-panel {
+    margin-top: 12px;
+    padding: 10px;
+  }
+
+  .action-panel .action-callout {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .action-panel > div:not(.hand-result-panel):not(.action-callout):not(.player-summary-list):not(.raise-control) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .action-panel > div:not(.hand-result-panel):not(.action-callout):not(.player-summary-list):not(.raise-control) button:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .player-summary-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .player-summary-item {
+    min-width: 0;
+    padding: 8px;
+  }
+
+  .player-summary-item strong,
+  .player-summary-item span,
+  .player-summary-item small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .raise-control {
+    flex-direction: row !important;
+  }
+
+  .hand-result-heading {
+    align-items: flex-start;
+  }
+
+  .chat-panel {
+    height: 240px;
+    margin-top: 6px;
+  }
+}

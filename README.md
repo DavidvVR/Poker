@@ -2,6 +2,10 @@
 
 Póker Amigos es un proyecto MVP para crear mesas privadas de Texas Hold'em y jugar con amigos desde cualquier dispositivo. La idea es pasar de una demo visual a una experiencia real con salas, jugadores, partidas sincronizadas y backend en Supabase.
 
+## Estado actual
+
+La fase 5 está implementada. La aplicación incluye salas persistentes, sincronización Realtime de lobby y mesa, turnos validados en servidor, apuestas básicas, dealer rotativo, ciegas 10/20, stacks persistentes, reparto del bote, showdown y una mesa responsive para escritorio y móvil.
+
 ## Objetivo del MVP
 
 Permitir que un grupo de amigos pueda:
@@ -67,12 +71,14 @@ Permitir que un grupo de amigos pueda:
 - Calcular ganador de la mano.
 
 ### Fase 5: sincronización en tiempo real
-- Usar Supabase Realtime para actualizar:
-  - lista de jugadores,
-  - estado de la partida,
-  - turnos,
-  - apuestas,
-  - cambios del tablero.
+- [x] Actualizar la lista de jugadores del lobby.
+- [x] Abrir la mesa automáticamente para todos al iniciar la partida.
+- [x] Sincronizar estado de partida, turnos y bote.
+- [x] Mostrar apuestas y acciones recientes.
+- [x] Reflejar stacks, estados de jugador y cambios del tablero.
+- [x] Mostrar el estado de conexión Realtime.
+
+Consulta [Fase5.md](Fase5.md) para activar las publicaciones necesarias en Supabase y verificar el flujo con varios clientes.
 
 ### Fase 6: experiencia de usuario
 - Mostrar mensajes de turno y estado.
@@ -212,8 +218,7 @@ npm install @supabase/supabase-js @supabase/ssr
 ## Próximos pasos ideales
 
 - Implementar autenticación real con Supabase Auth.
-- Añadir salas persistentes.
-- Añadir reglas de poker más completas.
+- Añadir apuestas completas por calle y side pots.
 - Añadir historial de partidas.
 - Añadir ranking y perfiles.
 

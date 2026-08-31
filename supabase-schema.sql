@@ -33,6 +33,11 @@ create table if not exists games (
   dealer_position integer default 0,
   pot integer default 0,
   status text not null default 'waiting',
+  round_stage text default 'preflop',
+  round_label text default 'Preflop',
+  action_count integer default 0,
+  community_cards jsonb default '[]'::jsonb,
+  result_message text,
   created_at timestamptz default now()
 );
 
@@ -64,3 +69,30 @@ create table if not exists chat_messages (
   message text not null,
   created_at timestamptz default now()
 );
+
+alter table games add column if not exists result_message text;
+
+alter table rooms replica identity full;
+alter table room_players replica identity full;
+alter table games replica identity full;
+alter table game_players replica identity full;
+alter table game_actions replica identity full;
+
+do $$
+declare
+  realtime_table text;
+begin
+  foreach realtime_table in array array['rooms', 'room_players', 'games', 'game_players', 'game_actions']
+  loop
+    if not exists (
+      select 1
+      from pg_publication_tables
+      where pubname = 'supabase_realtime'
+        and schemaname = 'public'
+        and tablename = realtime_table
+    ) then
+      execute format('alter publication supabase_realtime add table public.%I', realtime_table);
+    end if;
+  end loop;
+end
+$$;

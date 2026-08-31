@@ -1,0 +1,115 @@
+"use client";
+
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { sendChatMessage, type ChatMessage } from "@/lib/supabase/chat";
+
+type ChatPanelProps = {
+  roomId: string;
+  playerName: string;
+};
+
+export function ChatPanel({ roomId, playerName }: ChatPanelProps) {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [draft, setDraft] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let isCanceled = false;
+    const client = createClient();
+
+    const loadHistory = async () => {
+      try {
+        const response = await fetch(`/api/chat?roomId=${encodeURIComponent(roomId)}`);
+        const payload = await response.json();
+
+        if (!isCanceled && Array.isArray(payload.messages)) {
+          setMessages(payload.messages);
+        }
+      } catch {
+        // silently ignore initial load errors
+      }
+    };
+
+    const channel = client.channel(`chat-${roomId}`);
+
+    channel.on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages", filter: `room_id=eq.${roomId}` }, (event) => {
+      const row = event.new as { id?: string; message?: string; created_at?: string };
+
+      setMessages((current) => {
+        if (current.some((msg) => msg.id === row.id)) return current;
+        return [...current.slice(-59), {
+          id: row.id ?? crypto.randomUUID(),
+          playerName: "…",
+          message: row.message ?? "",
+          createdAt: row.created_at ?? new Date().toISOString(),
+        }];
+      });
+
+      void loadHistory();
+    });
+
+    void channel.subscribe();
+    void loadHistory();
+
+    return () => {
+      isCanceled = true;
+      void client.removeChannel(channel);
+    };
+  }, [roomId]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSend = async (event: FormEvent) => {
+    event.preventDefault();
+    const text = draft.trim();
+
+    if (!text || isSending) return;
+
+    setIsSending(true);
+    setDraft("");
+
+    try {
+      await sendChatMessage({ roomId, userName: playerName, message: text });
+    } catch {
+      setDraft(text);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  return (
+    <div className="chat-panel">
+      <div className="chat-header">
+        <strong>Chat de mesa</strong>
+      </div>
+      <div className="chat-messages" role="log" aria-live="polite">
+        {messages.length === 0
+          ? <p className="chat-empty">Nadie ha escrito nada todavía.</p>
+          : messages.map((msg) => (
+              <div key={msg.id} className={`chat-msg ${msg.playerName === playerName ? "mine" : ""}`}>
+                <span className="chat-author">{msg.playerName}</span>
+                <span className="chat-text">{msg.message}</span>
+              </div>
+            ))}
+        <div ref={bottomRef} />
+      </div>
+      <form className="chat-form" onSubmit={handleSend}>
+        <input
+          aria-label="Escribe un mensaje"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="Escribe un mensaje…"
+          maxLength={200}
+          disabled={isSending}
+        />
+        <button type="submit" disabled={!draft.trim() || isSending}>
+          {isSending ? "…" : "→"}
+        </button>
+      </form>
+    </div>
+  );
+}
