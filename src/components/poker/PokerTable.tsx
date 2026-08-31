@@ -72,6 +72,7 @@ export function PokerTable({ roomCode, roomId, gameId, playerName, onLeave }: Po
   const [raiseAmount, setRaiseAmount] = useState<string | number>(20);
   const [showdownSummary, setShowdownSummary] = useState<string | null>(null);
   const [playerStates, setPlayerStates] = useState<Record<string, PlayerActionState>>(() => ({ [playerName || "Tú"]: "acting" }));
+  const [showQuickInfo, setShowQuickInfo] = useState(false);
   const [bettingHistory, setBettingHistory] = useState<{ action: "fold" | "check" | "call" | "raise"; amount: number }[]>([]);
   const [recentActions, setRecentActions] = useState<string[]>([
     "La mano está lista para arrancar.",
@@ -426,23 +427,32 @@ export function PokerTable({ roomCode, roomId, gameId, playerName, onLeave }: Po
       </header>
 
       <section className="poker-table">
-        <div className="table-status">
-          <div>
-            <strong>Turno</strong>
-            <span>{currentTurnName}</span>
-          </div>
-          <div>
-            <strong>Bote</strong>
-            <span>{pot}</span>
-          </div>
-          <div>
-            <strong>Dealer</strong>
-            <span>{tableRoles.dealerName || "—"}</span>
-          </div>
-          <div>
-            <strong>Ciegas</strong>
-            <span>{blindValues.small}/{blindValues.big}</span>
-          </div>
+        <div className="table-status-shell">
+          <button type="button" className="quick-info-toggle" onClick={() => setShowQuickInfo((value) => !value)}>
+            <span>⚡</span>
+            <strong>Info rápida</strong>
+            <small>{showQuickInfo ? "Ocultar" : "Ver"}</small>
+          </button>
+          {showQuickInfo ? (
+            <div className="table-status">
+              <div>
+                <strong>Turno</strong>
+                <span>{currentTurnName}</span>
+              </div>
+              <div>
+                <strong>Bote</strong>
+                <span>{pot}</span>
+              </div>
+              <div>
+                <strong>Dealer</strong>
+                <span>{tableRoles.dealerName || "—"}</span>
+              </div>
+              <div>
+                <strong>Ciegas</strong>
+                <span>{blindValues.small}/{blindValues.big}</span>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="felt">

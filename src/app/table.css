@@ -418,8 +418,8 @@
     padding: 8px;
   }
 
-  .table-status div:last-child {
-    grid-column: 1 / -1;
+  .quick-info-toggle {
+    padding: 9px 10px;
   }
 
   .felt {
