@@ -183,12 +183,7 @@ npm run dev
 - Obtener credenciales.
 - Añadirlas al archivo `.env.local`.
 
-Ejemplo:
-```env
-NEXT_PUBLIC_SUPABASE_URL=tu_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_clave
-SUPABASE_SERVICE_ROLE_KEY=tu_clave_admin
-```
+
 
 ### 3. Instalar dependencias necesarias
 ```bash
