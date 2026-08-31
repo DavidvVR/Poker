@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { evaluateBestHand, getBettingState, getHandSetup, getHandSummary, getPotPayouts, getTableRoles, getTurnHelp, getWinningPlayers } from "./poker.ts";
+import { buildDealtPokerState, evaluateBestHand, getBettingState, getHandSetup, getHandSummary, getPotPayouts, getTableRoles, getTurnHelp, getWinningPlayers } from "./poker.ts";
 
 test("calcula la apuesta actual a partir de las acciones previas", () => {
   const state = getBettingState({
@@ -131,6 +131,14 @@ test("en heads-up el dealer pone la ciega pequeña", () => {
   assert.equal(setup.smallBlindIndex, 0);
   assert.equal(setup.bigBlindIndex, 1);
   assert.equal(setup.firstTurnIndex, 0);
+});
+
+test("genera manos distintas incluso cuando el seed coincide", () => {
+  const firstHand = buildDealtPokerState({ playerNames: ["Ana", "Luis"], seed: "same-seed", pot: 0 });
+  const secondHand = buildDealtPokerState({ playerNames: ["Ana", "Luis"], seed: "same-seed", pot: 0 });
+
+  assert.notDeepEqual(firstHand.players[0].hand, secondHand.players[0].hand);
+  assert.notDeepEqual(firstHand.communityCards, secondHand.communityCards);
 });
 
 test("reparte el bote entre ganadores sin perder fichas", () => {

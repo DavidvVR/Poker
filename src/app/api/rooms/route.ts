@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { normalizeRoomCode } from "@/lib/poker";
+import { normalizeRoomCode, shuffleDeck } from "@/lib/poker";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 function getErrorMessage(error: unknown) {
@@ -33,29 +33,15 @@ function mapRoomPlayers(rows: Array<Record<string, unknown>> | null | undefined,
 }
 
 function buildAssignedHand(existingHands: Array<Array<{ value?: string; suit?: string; label?: string }> | null | undefined>, seed: string) {
-  const suits = ["♠", "♥", "♦", "♣"] as const;
-  const values = ["2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K", "A"] as const;
-  const allCards = values.flatMap((value) => suits.map((suit) => ({ value, suit, label: `${value}${suit}` })));
   const usedLabels = new Set(
     (existingHands ?? [])
       .flatMap((hand) => Array.isArray(hand) ? hand : [])
       .map((card) => card?.label)
       .filter((label): label is string => Boolean(label))
   );
-  const availableCards = allCards.filter((card) => !usedLabels.has(card.label));
+  const availableCards = shuffleDeck(`${seed}-${Math.random().toString(36).slice(2)}`).filter((card) => !usedLabels.has(card.label));
 
-  let seedValue = 0;
-  for (const character of seed) {
-    seedValue += character.charCodeAt(0);
-  }
-
-  const shuffledCards = [...availableCards];
-  for (let index = shuffledCards.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(((seedValue + index) % (index + 1) + (index + 1)) % (index + 1));
-    [shuffledCards[index], shuffledCards[swapIndex]] = [shuffledCards[swapIndex], shuffledCards[index]];
-  }
-
-  return shuffledCards.slice(0, 2);
+  return availableCards.slice(0, 2);
 }
 
 async function loadPlayers(adminClient: ReturnType<typeof createAdminClient>, roomId: string, hostId: string | null) {

@@ -38,14 +38,26 @@ const createSeed = (value: string) => {
   return Math.abs(hash);
 };
 
-const shuffleDeck = (seed: string) => {
-  const deck = VALUES.flatMap((value) => SUITS.map((suit) => ({ value, suit, label: `${value}${suit}` })));
-  const randomSeed = createSeed(seed);
+const getRandomIndex = (max: number) => {
+  if (typeof globalThis !== "undefined" && typeof globalThis.crypto?.getRandomValues === "function") {
+    const buffer = new Uint32Array(1);
+    globalThis.crypto.getRandomValues(buffer);
+    return buffer[0] % max;
+  }
+
+  return Math.floor(Math.random() * max);
+};
+
+const createDeck = () => VALUES.flatMap((value) => SUITS.map((suit) => ({ value, suit, label: `${value}${suit}` })));
+
+export const shuffleDeck = (seed: string) => {
+  const deck = createDeck();
   const shuffled = [...deck];
+  const randomSeed = createSeed(seed);
 
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const j = Math.floor(((randomSeed + index) % (index + 1) + (index + 1)) % (index + 1));
-    [shuffled[index], shuffled[j]] = [shuffled[j], shuffled[index]];
+    const swapIndex = (randomSeed + getRandomIndex(index + 1) + index) % (index + 1);
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
   }
 
   return shuffled;
