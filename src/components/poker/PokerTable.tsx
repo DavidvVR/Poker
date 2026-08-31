@@ -541,11 +541,6 @@ export function PokerTable({ roomCode, roomId, gameId, playerName, onLeave }: Po
             Nueva mano
           </button>
         </div>
-        <div className="round-info-card">
-          <span className="status-pill active">Ronda en curso</span>
-          <strong>{roundLabel}</strong>
-          <p>{roundNotice ?? getRoundDescription(roundLabel)}</p>
-        </div>
         <div className="raise-control">
           <label htmlFor="raise-amount">Cantidad de subida</label>
           <input
@@ -559,6 +554,11 @@ export function PokerTable({ roomCode, roomId, gameId, playerName, onLeave }: Po
               setRaiseAmount(nextValue === "" ? "" : Number(nextValue));
             }}
           />
+        </div>
+        <div className="round-info-card">
+          <span className="status-pill active">Ronda en curso</span>
+          <strong>{roundLabel}</strong>
+          <p>{roundNotice ?? getRoundDescription(roundLabel)}</p>
         </div>
       </section>
 
