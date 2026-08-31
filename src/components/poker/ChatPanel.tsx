@@ -65,7 +65,16 @@ export function ChatPanel({ roomId, playerName }: ChatPanelProps) {
   }, [roomId]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages.length === 0) return;
+
+    const container = bottomRef.current?.parentElement;
+    if (!container) return;
+
+    const isNearBottom = container.scrollHeight - container.clientHeight - container.scrollTop < 80;
+
+    if (isNearBottom) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
   const handleSend = async (event: FormEvent) => {
