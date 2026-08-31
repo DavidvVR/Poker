@@ -519,11 +519,6 @@ export function PokerTable({ roomCode, roomId, gameId, playerName, onLeave }: Po
           </div>
         ) : null}
         {roundNotice ? <div className="notice round-banner">{roundNotice}</div> : null}
-        <div className="side-status-card">
-          <span className="status-pill active">Ronda en curso</span>
-          <strong>{roundLabel}</strong>
-          <p>{roundNotice ?? getRoundDescription(roundLabel)}</p>
-        </div>
         <div className="action-callout">
           <span className={`status-pill ${isMyTurn ? "active" : ""}`}>{turnHelp.title}</span>
           <p>{turnHelp.detail}</p>
@@ -545,6 +540,11 @@ export function PokerTable({ roomCode, roomId, gameId, playerName, onLeave }: Po
           <button onClick={handleNewHand} disabled={isSubmittingAction || !isShowdown}>
             Nueva mano
           </button>
+        </div>
+        <div className="round-info-card">
+          <span className="status-pill active">Ronda en curso</span>
+          <strong>{roundLabel}</strong>
+          <p>{roundNotice ?? getRoundDescription(roundLabel)}</p>
         </div>
         <div className="raise-control">
           <label htmlFor="raise-amount">Cantidad de subida</label>
