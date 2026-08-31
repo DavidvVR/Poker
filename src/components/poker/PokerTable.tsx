@@ -529,15 +529,6 @@ export function PokerTable({ roomCode, roomId, gameId, playerName, onLeave }: Po
           <p>{turnHelp.detail}</p>
         </div>
         {errorMessage && <p className="notice">{errorMessage}</p>}
-        <div className="player-summary-list">
-          {playersSummary.map((player) => (
-            <div key={player.name} className={`player-summary-item ${getPlayerStateClassName(player.state ?? "idle")}`}>
-              <strong>{player.name}</strong>
-              <span>{player.stack} fichas</span>
-              <small>{player.status}</small>
-            </div>
-          ))}
-        </div>
         <div>
           <button onClick={() => handleAction("Te retiraste de esta mano", "fold", 0)} disabled={isSubmittingAction || isShowdown || !isMyTurn}>
             Retirarse
