@@ -25,11 +25,13 @@ export async function POST(request: NextRequest) {
     }
 
     const adminClient = createAdminClient();
+    const normalizedName = userName.trim();
 
-    const { data: profile, error: profileError } = await adminClient
+    let profile = null as { id: string } | null;
+    const { data: existingProfile, error: profileError } = await adminClient
       .from("profiles")
       .select("id")
-      .eq("full_name", userName.trim())
+      .ilike("full_name", normalizedName)
       .limit(1)
       .maybeSingle();
 
@@ -37,8 +39,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: getErrorMessage(profileError) }, { status: 400 });
     }
 
-    if (!profile) {
-      return NextResponse.json({ error: "Jugador no encontrado." }, { status: 404 });
+    if (existingProfile) {
+      profile = existingProfile as { id: string };
+    } else {
+      const { data: createdProfile, error: createProfileError } = await adminClient
+        .from("profiles")
+        .insert({ full_name: normalizedName })
+        .select("id")
+        .single();
+
+      if (createProfileError || !createdProfile) {
+        return NextResponse.json({ error: getErrorMessage(createProfileError ?? new Error("No se pudo crear el perfil del jugador.")) }, { status: 400 });
+      }
+
+      profile = createdProfile as { id: string };
     }
 
     const { data: chatData, error: chatError } = await adminClient

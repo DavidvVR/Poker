@@ -101,6 +101,10 @@ export function PokerApp() {
       }
     };
 
+    const intervalId = window.setInterval(() => {
+      void refreshPlayers();
+    }, 2500);
+
     channel.on("postgres_changes", { event: "*", schema: "public", table: "rooms", filter: `id=eq.${roomId}` }, () => {
       void refreshPlayers();
     });
@@ -123,6 +127,7 @@ export function PokerApp() {
     return () => {
       isCanceled = true;
       refreshVersion += 1;
+      window.clearInterval(intervalId);
       void client.removeChannel(channel);
     };
   }, [roomCode, roomId, screen]);

@@ -101,11 +101,6 @@ export async function POST(request: NextRequest) {
           current_turn: nextTurnUserId,
           dealer_position: handSetup.dealerIndex,
           status: "playing",
-          round_stage: "preflop",
-          round_label: getRoundLabel("preflop"),
-          action_count: 0,
-          community_cards: dealtState.communityCards,
-          result_message: null,
         })
         .eq("id", gameId);
 
@@ -243,13 +238,8 @@ export async function POST(request: NextRequest) {
         dealer_position: 0,
         pot: initialPot,
         status: "waiting",
-        round_stage: initialRoundStage,
-        round_label: getRoundLabel(initialRoundStage),
-        action_count: 0,
-        community_cards: dealtState.communityCards,
-        result_message: null,
       })
-      .select("id, room_id, status, pot, current_turn, dealer_position, round_stage, round_label, action_count, community_cards, result_message")
+      .select("id, room_id, status, pot, current_turn, dealer_position")
       .single();
 
     if (gameError || !gameData) {
@@ -265,6 +255,15 @@ export async function POST(request: NextRequest) {
       all_in: false,
       hand: dealtState.players[index]?.hand ?? [],
     }));
+
+    const { error: clearGamePlayersError } = await adminClient
+      .from("game_players")
+      .delete()
+      .eq("game_id", gameData.id);
+
+    if (clearGamePlayersError) {
+      return NextResponse.json({ error: getErrorMessage(clearGamePlayersError) }, { status: 400 });
+    }
 
     const { error: gamePlayersError } = await adminClient
       .from("game_players")
@@ -319,7 +318,7 @@ export async function GET(request: NextRequest) {
     const adminClient = createAdminClient();
     const { data: gameData, error: gameError } = await adminClient
       .from("games")
-      .select("id, room_id, status, pot, current_turn, dealer_position, round_stage, round_label, action_count, community_cards, result_message")
+      .select("id, room_id, status, pot, current_turn, dealer_position")
       .eq("id", gameId)
       .single();
 
@@ -358,8 +357,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: getErrorMessage(gameActionsError) }, { status: 400 });
     }
 
-    const roundStage = (gameData.round_stage as string | null) ?? getRoundStageFromActionCount(0);
-    const roundLabel = (gameData.round_label as string | null) ?? getRoundLabel(getRoundStageFromActionCount(0));
+    const { count: actionCount, error: actionCountError } = await adminClient
+      .from("game_actions")
+      .select("*", { count: "exact", head: true })
+      .eq("game_id", gameId);
+
+    const normalizedActionCount = actionCountError ? 0 : (actionCount ?? 0);
+    const roundStage = getRoundStageFromActionCount(normalizedActionCount);
+    const roundLabel = getRoundLabel(roundStage);
     const players = (gamePlayers ?? [])
       .map((row, index) => ({
         id: (row as { user_id?: string }).user_id ?? `player-${index}`,
@@ -398,9 +403,9 @@ export async function GET(request: NextRequest) {
         bigBlind: 20,
         roundStage,
         roundLabel,
-        actionCount: gameData.action_count ?? 0,
-        communityCards: Array.isArray(gameData.community_cards) ? gameData.community_cards : [],
-        resultMessage: gameData.result_message ?? null,
+        actionCount: normalizedActionCount,
+        communityCards: [],
+        resultMessage: null,
       },
       players,
       actions,

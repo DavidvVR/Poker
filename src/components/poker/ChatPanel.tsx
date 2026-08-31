@@ -50,11 +50,16 @@ export function ChatPanel({ roomId, playerName }: ChatPanelProps) {
       void loadHistory();
     });
 
+    const pollTimer = window.setInterval(() => {
+      void loadHistory();
+    }, 2000);
+
     void channel.subscribe();
     void loadHistory();
 
     return () => {
       isCanceled = true;
+      window.clearInterval(pollTimer);
       void client.removeChannel(channel);
     };
   }, [roomId]);
@@ -73,7 +78,23 @@ export function ChatPanel({ roomId, playerName }: ChatPanelProps) {
     setDraft("");
 
     try {
-      await sendChatMessage({ roomId, userName: playerName, message: text });
+      const response = await sendChatMessage({ roomId, userName: playerName, message: text });
+      setMessages((current) => {
+        if (current.some((msg) => msg.id === response.message.id)) {
+          return current;
+        }
+        return [...current, response.message];
+      });
+      window.setTimeout(() => {
+        void fetch(`/api/chat?roomId=${encodeURIComponent(roomId)}`)
+          .then((res) => res.json())
+          .then((payload) => {
+            if (Array.isArray(payload.messages)) {
+              setMessages(payload.messages);
+            }
+          })
+          .catch(() => undefined);
+      }, 400);
     } catch {
       setDraft(text);
     } finally {

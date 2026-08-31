@@ -32,6 +32,32 @@ function mapRoomPlayers(rows: Array<Record<string, unknown>> | null | undefined,
     .sort((left, right) => left.seat - right.seat || Number(right.isHost) - Number(left.isHost));
 }
 
+function buildAssignedHand(existingHands: Array<Array<{ value?: string; suit?: string; label?: string }> | null | undefined>, seed: string) {
+  const suits = ["♠", "♥", "♦", "♣"] as const;
+  const values = ["2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K", "A"] as const;
+  const allCards = values.flatMap((value) => suits.map((suit) => ({ value, suit, label: `${value}${suit}` })));
+  const usedLabels = new Set(
+    (existingHands ?? [])
+      .flatMap((hand) => Array.isArray(hand) ? hand : [])
+      .map((card) => card?.label)
+      .filter((label): label is string => Boolean(label))
+  );
+  const availableCards = allCards.filter((card) => !usedLabels.has(card.label));
+
+  let seedValue = 0;
+  for (const character of seed) {
+    seedValue += character.charCodeAt(0);
+  }
+
+  const shuffledCards = [...availableCards];
+  for (let index = shuffledCards.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(((seedValue + index) % (index + 1) + (index + 1)) % (index + 1));
+    [shuffledCards[index], shuffledCards[swapIndex]] = [shuffledCards[swapIndex], shuffledCards[index]];
+  }
+
+  return shuffledCards.slice(0, 2);
+}
+
 async function loadPlayers(adminClient: ReturnType<typeof createAdminClient>, roomId: string, hostId: string | null) {
   const { data, error } = await adminClient
     .from("room_players")
@@ -167,9 +193,23 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      const { data: existingRoomPlayers, error: existingRoomPlayersError } = await adminClient
+        .from("room_players")
+        .select("seat")
+        .eq("room_id", roomData.id);
+
+      if (existingRoomPlayersError) {
+        return NextResponse.json({ error: getErrorMessage(existingRoomPlayersError) }, { status: 400 });
+      }
+
+      const nextSeat = ((existingRoomPlayers ?? []).reduce((maxSeat, row) => {
+        const seatValue = Number((row as { seat?: number }).seat ?? 0);
+        return Math.max(maxSeat, seatValue);
+      }, -1) + 1);
+
       const { data, error } = await adminClient
         .from("room_players")
-        .insert({ room_id: roomData.id, user_id: profileData.id, seat: 1, is_ready: false, chips: 1000 })
+        .insert({ room_id: roomData.id, user_id: profileData.id, seat: nextSeat, is_ready: false, chips: 1000 })
         .select("id")
         .single();
 
@@ -179,6 +219,47 @@ export async function POST(request: NextRequest) {
         }
 
         return NextResponse.json({ error: getErrorMessage(error) }, { status: 400 });
+      }
+
+      const { data: activeGame, error: activeGameError } = await adminClient
+        .from("games")
+        .select("id, status")
+        .eq("room_id", roomData.id)
+        .maybeSingle();
+
+      if (!activeGameError && activeGame && activeGame.status !== "finished") {
+        const { data: existingGamePlayer, error: existingGamePlayerError } = await adminClient
+          .from("game_players")
+          .select("id, hand")
+          .eq("game_id", activeGame.id)
+          .eq("user_id", profileData.id)
+          .maybeSingle();
+
+        if (!existingGamePlayerError && !existingGamePlayer) {
+          const { data: currentGamePlayers, error: currentGamePlayersError } = await adminClient
+            .from("game_players")
+            .select("hand")
+            .eq("game_id", activeGame.id);
+
+          if (!currentGamePlayersError) {
+            const newHand = buildAssignedHand(
+              (currentGamePlayers ?? []).map((row) => (Array.isArray((row as { hand?: unknown }).hand) ? (row as { hand?: Array<{ value?: string; suit?: string; label?: string }> }).hand : [])),
+              `${activeGame.id}-${nextSeat}`
+            );
+
+            await adminClient
+              .from("game_players")
+              .insert({
+                game_id: activeGame.id,
+                user_id: profileData.id,
+                chips: 1000,
+                position: nextSeat,
+                folded: false,
+                all_in: false,
+                hand: newHand,
+              });
+          }
+        }
       }
 
       const players = await loadPlayers(adminClient, roomData.id, roomData.host_id);

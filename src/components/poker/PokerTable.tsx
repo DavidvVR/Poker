@@ -69,7 +69,7 @@ export function PokerTable({ roomCode, roomId, gameId, playerName, onLeave }: Po
   const [handResult, setHandResult] = useState<string | null>(null);
   const [isShowdown, setIsShowdown] = useState(false);
   const [roundNotice, setRoundNotice] = useState<string | null>(null);
-  const [raiseAmount, setRaiseAmount] = useState(20);
+  const [raiseAmount, setRaiseAmount] = useState<string | number>(20);
   const [showdownSummary, setShowdownSummary] = useState<string | null>(null);
   const [playerStates, setPlayerStates] = useState<Record<string, PlayerActionState>>(() => ({ [playerName || "Tú"]: "acting" }));
   const [bettingHistory, setBettingHistory] = useState<{ action: "fold" | "check" | "call" | "raise"; amount: number }[]>([]);
@@ -195,6 +195,10 @@ export function PokerTable({ roomCode, roomId, gameId, playerName, onLeave }: Po
       void refreshGame();
     });
 
+    const intervalId = window.setInterval(() => {
+      void refreshGame();
+    }, 2500);
+
     void channel.subscribe((status) => {
       if (status === "SUBSCRIBED") setRealtimeStatus("En vivo");
       if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") setRealtimeStatus("Reconectando");
@@ -205,6 +209,7 @@ export function PokerTable({ roomCode, roomId, gameId, playerName, onLeave }: Po
     return () => {
       isCanceled = true;
       refreshVersion += 1;
+      window.clearInterval(intervalId);
       void client.removeChannel(channel);
     };
   }, [gameId]);
@@ -305,9 +310,9 @@ export function PokerTable({ roomCode, roomId, gameId, playerName, onLeave }: Po
   const currentPlayerSeat = pokerState.players.find((entry) => entry.name === currentUserName) ?? pokerState.players[0];
   const otherPlayers = pokerState.players.filter((entry) => entry.name !== currentUserName);
   const tableSeats = [
-    { position: "top", player: otherPlayers[0] ?? currentPlayerSeat },
-    { position: "right", player: otherPlayers[1] ?? otherPlayers[0] ?? currentPlayerSeat },
-    { position: "bottom", player: currentPlayerSeat },
+    { position: "top", player: otherPlayers[0] ?? null },
+    { position: "right", player: otherPlayers[1] ?? null },
+    { position: "bottom", player: currentPlayerSeat ?? null },
   ];
   const isMyTurn = currentTurnName === currentUserName;
   const bettingState = getBettingState({ previousActions: bettingHistory, playerContribution: 0 });
@@ -420,33 +425,8 @@ export function PokerTable({ roomCode, roomId, gameId, playerName, onLeave }: Po
         </button>
       </header>
 
-      <section className="table-insights">
-        <div className="insight-card primary">
-          <span className={`status-pill ${isMyTurn ? "active" : ""}`}>{isMyTurn ? "Tu turno" : "Turno en curso"}</span>
-          <strong>{turnPrompt}</strong>
-          <p>{getRoundDescription(roundLabel)}</p>
-        </div>
-        <div className="insight-card">
-          <strong>{handSummary.title}</strong>
-          <p>{handSummary.detail}</p>
-          <span className="status-pill active">{handSummary.badge}</span>
-          <div style={{ marginTop: "8px" }}>
-            <strong>Acciones recientes</strong>
-            <ul>
-              {recentActions.map((entry) => (
-                <li key={entry}>{entry}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
-
       <section className="poker-table">
         <div className="table-status">
-          <div>
-            <strong>Ronda</strong>
-            <span>{roundLabel}</span>
-          </div>
           <div>
             <strong>Turno</strong>
             <span>{currentTurnName}</span>
@@ -480,19 +460,23 @@ export function PokerTable({ roomCode, roomId, gameId, playerName, onLeave }: Po
           {tableSeats.map((seat) => {
             const seatState = seat.player?.name ? (playerStates[seat.player.name] ?? "idle") : "idle";
             return (
-              <div key={`${seat.position}-${seat.player?.name ?? "seat"}`} className={`player ${seat.position} ${activePlayerName === seat.player?.name ? "active" : ""}`}>
+              <div key={`${seat.position}-${seat.player?.name ?? "seat"}`} className={`player ${seat.position} ${seat.player && activePlayerName === seat.player.name ? "active" : ""} ${seat.player ? "" : "empty"}`}>
                 <span className={`avatar ${seat.position === "top" ? "warm" : seat.position === "right" ? "blue" : ""}`}>
                   {(seat.player?.name ?? "?").charAt(0).toUpperCase()}
                 </span>
-                <strong>{seat.player?.name ?? "Jugador"}</strong>
-                <small>{seat.player?.stack ?? 0} fichas · {seat.player?.status ?? "Esperando"}</small>
-                <div className="seat-roles">
-                  {seat.player?.name === tableRoles.dealerName ? <span title="Dealer">D</span> : null}
-                  {seat.player?.name === tableRoles.smallBlindName ? <span title={`Ciega pequeña ${blindValues.small}`}>SB</span> : null}
-                  {seat.player?.name === tableRoles.bigBlindName ? <span title={`Ciega grande ${blindValues.big}`}>BB</span> : null}
-                </div>
-                <span className={`seat-state ${getPlayerStateClassName(seatState)}`}>{getPlayerStatusLabel(seatState)}</span>
-                {seat.position === "bottom" ? (
+                <strong>{seat.player?.name ?? "Esperando"}</strong>
+                <small>{seat.player ? `${seat.player.stack} fichas · ${seat.player.status}` : "Aún no hay jugador"}</small>
+                {seat.player ? (
+                  <>
+                    <div className="seat-roles">
+                      {seat.player.name === tableRoles.dealerName ? <span title="Dealer">D</span> : null}
+                      {seat.player.name === tableRoles.smallBlindName ? <span title={`Ciega pequeña ${blindValues.small}`}>SB</span> : null}
+                      {seat.player.name === tableRoles.bigBlindName ? <span title={`Ciega grande ${blindValues.big}`}>BB</span> : null}
+                    </div>
+                    <span className={`seat-state ${getPlayerStateClassName(seatState)}`}>{getPlayerStatusLabel(seatState)}</span>
+                  </>
+                ) : null}
+                {seat.position === "bottom" && seat.player ? (
                   <div className="hand">
                     {currentPlayerCards.length > 0 ? (
                       currentPlayerCards.map((card) => <PokerCard key={`${card.value}-${card.suit}`} value={card.value} suit={card.suit} />)
@@ -525,6 +509,11 @@ export function PokerTable({ roomCode, roomId, gameId, playerName, onLeave }: Po
           </div>
         ) : null}
         {roundNotice ? <div className="notice round-banner">{roundNotice}</div> : null}
+        <div className="side-status-card">
+          <span className="status-pill active">Ronda en curso</span>
+          <strong>{roundLabel}</strong>
+          <p>{roundNotice ?? getRoundDescription(roundLabel)}</p>
+        </div>
         <div className="action-callout">
           <span className={`status-pill ${isMyTurn ? "active" : ""}`}>{turnHelp.title}</span>
           <p>{turnHelp.detail}</p>
@@ -549,8 +538,8 @@ export function PokerTable({ roomCode, roomId, gameId, playerName, onLeave }: Po
           <button className="call" onClick={() => handleAction(`Igualaste ${bettingState.requiredCallAmount} fichas`, "call", bettingState.requiredCallAmount)} disabled={isSubmittingAction || isShowdown || !isMyTurn || bettingState.requiredCallAmount <= 0}>
             Igualar {bettingState.requiredCallAmount}
           </button>
-          <button onClick={() => handleAction(`Subiste ${raiseAmount} fichas`, "raise", raiseAmount)} disabled={isSubmittingAction || isShowdown || !isMyTurn || raiseAmount <= 0}>
-            Subir {raiseAmount}
+          <button onClick={() => handleAction(`Subiste ${Number(raiseAmount) || 0} fichas`, "raise", Number(raiseAmount) || 0)} disabled={isSubmittingAction || isShowdown || !isMyTurn || Number(raiseAmount) <= 0}>
+            Subir {Number(raiseAmount) || 0}
           </button>
           <button onClick={handleNewHand} disabled={isSubmittingAction || !isShowdown}>
             Nueva mano
@@ -558,7 +547,17 @@ export function PokerTable({ roomCode, roomId, gameId, playerName, onLeave }: Po
         </div>
         <div className="raise-control">
           <label htmlFor="raise-amount">Cantidad de subida</label>
-          <input id="raise-amount" type="number" min="10" step="10" value={raiseAmount} onChange={(event) => setRaiseAmount(Number(event.target.value) || 10)} />
+          <input
+            id="raise-amount"
+            type="number"
+            min="10"
+            step="10"
+            value={raiseAmount}
+            onChange={(event) => {
+              const nextValue = event.target.value;
+              setRaiseAmount(nextValue === "" ? "" : Number(nextValue));
+            }}
+          />
         </div>
       </section>
 

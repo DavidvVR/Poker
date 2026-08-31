@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 
     const { data: gameData, error: gameLoadError } = await adminClient
       .from("games")
-      .select("id, pot, current_turn, room_id, status, community_cards")
+      .select("id, pot, current_turn, room_id, status")
       .eq("id", gameId)
       .single();
 
@@ -185,9 +185,7 @@ export async function POST(request: NextRequest) {
         ? (row as { hand: Array<{ value: string; suit: string; label: string }> }).hand
         : [],
     }));
-    const communityCards = Array.isArray(gameData.community_cards)
-      ? gameData.community_cards as Array<{ value: string; suit: string; label: string }>
-      : [];
+    const communityCards: Array<{ value: string; suit: string; label: string }> = [];
     const winners = shouldShowdown
       ? (contenders.length === 1 ? contenders : getWinningPlayers(contenders, communityCards))
       : [];
@@ -235,10 +233,6 @@ export async function POST(request: NextRequest) {
       .update({
         pot: nextPot,
         current_turn: nextTurnUserId,
-        action_count: nextActionCount,
-        round_stage: finalRoundStage,
-        round_label: getRoundLabel(finalRoundStage),
-        result_message: shouldShowdown ? resultMessage : null,
         status: shouldShowdown ? "finished" : (gameData.status === "waiting" ? "playing" : gameData.status),
       })
       .eq("id", gameId);
@@ -282,6 +276,7 @@ export async function POST(request: NextRequest) {
         pot: nextPot,
         currentTurn: nextTurnUserId,
         currentTurnName: nextTurnName,
+        actionCount: nextActionCount,
         roundStage: finalRoundStage,
         roundLabel: getRoundLabel(finalRoundStage),
         status: shouldShowdown ? "finished" : (gameData.status === "waiting" ? "playing" : gameData.status),
