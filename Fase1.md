@@ -2,19 +2,20 @@
 
 ## Avance actual
 
-El proyecto ya cuenta con una base sólida para iniciar el desarrollo del MVP de poker para jugar con amigos.
+El proyecto ya cuenta con una base sólida para comenzar la siguiente etapa del MVP de poker para jugar con amigos.
 
-### Lo que ya tienes implementado
+### Lo que ya quedó implementado
 - Proyecto inicial creado con Next.js y TypeScript.
-- Estructura base del frontend reorganizada en componentes y utilidades.
-- Pantalla principal con flujo de bienvenida, creación de mesa y unión a sala.
-- Diseño visual inicial de la interfaz de poker con vista de mesa.
+- Estructura base del frontend reorganizada en componentes y utilidades reutilizables.
+- Pantalla principal con flujo de bienvenida, creación de mesa y entrada a una sala.
+- Diseño visual inicial de la interfaz de poker con una vista de mesa de ejemplo.
 - Mejoras en el flujo de usuario con mensajes de ayuda, estados más claros y navegación entre pantallas.
 - Adaptación inicial del diseño para pantallas móviles.
 - Integración base preparada con Supabase mediante clientes para navegador y servidor.
 - Variables de entorno de desarrollo configuradas para conectar con Supabase.
 - Esquema SQL inicial preparado para tablas de salas, jugadores, partidas y acciones.
 - README con el roadmap general del proyecto y la visión del MVP.
+- Validación del proyecto mediante build exitoso con Next.js.
 
 ### Estado general
 El proyecto está en una etapa de prototipo funcional visual y de arquitectura preparada para integrar backend real, con una base sólida para avanzar hacia salas persistentes, jugadores y partidas sincronizadas.
@@ -27,7 +28,8 @@ Llegar a una base estable donde el proyecto pueda:
 - arrancar correctamente,
 - mostrar una experiencia de usuario clara,
 - preparar la arquitectura para integrar Supabase,
-- dejar listo el camino para implementar salas, jugadores y partidas reales.
+- dejar listo el camino para implementar salas, jugadores y partidas reales,
+- preparar el proyecto para pasar a una integración más completa con datos persistentes.
 
 ---
 
@@ -82,7 +84,8 @@ La Fase 1 se dará por completada cuando:
 - exista una base preparada para conectar Supabase,
 - la arquitectura esté organizada para escalar al MVP completo,
 - la interfaz sea usable y responsive en móvil,
-- el proyecto esté listo para pasar a la implementación real del backend y juego.
+- el proyecto esté listo para pasar a la implementación real del backend y juego,
+- se haya validado el build sin errores de compilación.
 
 ---
 
