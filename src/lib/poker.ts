@@ -169,6 +169,13 @@ export const getVisibleCommunityCards = (stage: GameRoundStage, communityCards: 
   return communityCards.slice(0, countByStage[stage]);
 };
 
+export const getShowdownResultMessage = (actions: Array<{ action?: string | null }> = []) => {
+  const showdownAction = [...actions].reverse().find((entry) => typeof entry.action === "string" && entry.action.startsWith("showdown:"));
+  if (!showdownAction?.action) return null;
+  const message = showdownAction.action.replace(/^showdown:/, "").trim();
+  return message || null;
+};
+
 export const getNextTurnIndex = (currentTurnIndex: number, playerCount: number) => (currentTurnIndex + 1) % playerCount;
 
 export const getNextRoundStage = (stage: GameRoundStage, actionCount: number): GameRoundStage => {

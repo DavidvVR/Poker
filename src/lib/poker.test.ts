@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildDealtPokerState, evaluateBestHand, getBettingState, getHandSetup, getHandSummary, getPotPayouts, getTableRoles, getTurnHelp, getWinningPlayers } from "./poker.ts";
+import { buildDealtPokerState, evaluateBestHand, getBettingState, getHandSetup, getHandSummary, getPotPayouts, getShowdownResultMessage, getTableRoles, getTurnHelp, getWinningPlayers } from "./poker.ts";
 
 test("calcula la apuesta actual a partir de las acciones previas", () => {
   const state = getBettingState({
@@ -139,6 +139,12 @@ test("genera manos distintas incluso cuando el seed coincide", () => {
 
   assert.notDeepEqual(firstHand.players[0].hand, secondHand.players[0].hand);
   assert.notDeepEqual(firstHand.communityCards, secondHand.communityCards);
+});
+
+test("extrae el mensaje de showdown desde las acciones persistidas", () => {
+  const message = getShowdownResultMessage([{ action: "check" }, { action: "showdown:Ana gana con Par." }]);
+
+  assert.equal(message, "Ana gana con Par.");
 });
 
 test("reparte el bote entre ganadores sin perder fichas", () => {

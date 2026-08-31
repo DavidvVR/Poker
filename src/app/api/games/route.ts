@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildDealtPokerState, getHandSetup, getRoundLabel, getRoundStageFromActionCount } from "@/lib/poker";
+import { buildDealtPokerState, getHandSetup, getRoundLabel, getRoundStageFromActionCount, getShowdownResultMessage } from "@/lib/poker";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 function getErrorMessage(error: unknown) {
@@ -389,6 +389,7 @@ export async function GET(request: NextRequest) {
       amount: (row as { amount?: number }).amount ?? 0,
       createdAt: (row as { created_at?: string }).created_at ?? "",
     })).reverse();
+    const resultMessage = getShowdownResultMessage(actions);
 
     return NextResponse.json({
       game: {
@@ -405,7 +406,7 @@ export async function GET(request: NextRequest) {
         roundLabel,
         actionCount: normalizedActionCount,
         communityCards: [],
-        resultMessage: null,
+        resultMessage,
       },
       players,
       actions,

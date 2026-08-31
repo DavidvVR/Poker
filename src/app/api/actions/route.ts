@@ -217,6 +217,7 @@ export async function POST(request: NextRequest) {
     const resultMessage = shouldShowdown
       ? (winnerNames ? `Showdown. ${winnerNames} gana${winners.length > 1 ? "n" : ""} la mano${winningHand ? ` con ${winningHand}` : ""}.` : "Showdown. La mano termina.")
       : `${normalizedActionName} registrado`;
+    const showdownActionName = shouldShowdown ? `showdown:${resultMessage}` : null;
 
     const { data: actionData, error: actionError } = await adminClient
       .from("game_actions")
@@ -226,6 +227,16 @@ export async function POST(request: NextRequest) {
 
     if (actionError || !actionData) {
       return NextResponse.json({ error: getErrorMessage(actionError ?? new Error("No se pudo registrar la acción.")) }, { status: 400 });
+    }
+
+    if (showdownActionName) {
+      const { error: showdownActionError } = await adminClient
+        .from("game_actions")
+        .insert({ game_id: gameId, user_id: gameData.current_turn, action: showdownActionName, amount: 0 });
+
+      if (showdownActionError) {
+        return NextResponse.json({ error: getErrorMessage(showdownActionError) }, { status: 400 });
+      }
     }
 
     const { error: gameUpdateError } = await adminClient

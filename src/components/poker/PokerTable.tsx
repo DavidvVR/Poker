@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createPokerTableView, getBettingState, getHandSummary, getNextRoundStage, getNextTurnIndex, getPlayerStateClassName, getPlayerStatusLabel, getTableRoles, getTurnHelp, getVisibleCommunityCards, getWinningPlayers, type GameRoundStage, type PlayerActionState, type PokerCardModel } from "@/lib/poker";
+import { getBettingState, getHandSummary, getNextRoundStage, getNextTurnIndex, getPlayerStateClassName, getPlayerStatusLabel, getTableRoles, getTurnHelp, getVisibleCommunityCards, getWinningPlayers, type GameRoundStage, type PlayerActionState, type PokerCardModel, type PokerTableViewModel } from "@/lib/poker";
 import { recordAction } from "@/lib/supabase/actions";
 import { createClient } from "@/lib/supabase/client";
 import { getGameState, resetHand } from "@/lib/supabase/games";
@@ -64,7 +64,16 @@ export function PokerTable({ roomCode, roomId, gameId, playerName, onLeave }: Po
     { name: "Ana", stack: 920, status: "Esperando", state: "idle" },
     { name: "Luis", stack: 1080, status: "Esperando", state: "idle" },
   ]);
-  const [pokerState, setPokerState] = useState(() => createPokerTableView({ playerNames: [playerName || "Tú", "Ana", "Luis"], seed: gameId, pot: 0 }));
+  const [pokerState, setPokerState] = useState<PokerTableViewModel>({
+    players: [],
+    communityCards: [],
+    currentTurnIndex: 0,
+    currentTurnName: "",
+    dealerIndex: 0,
+    roundStage: "preflop",
+    roundLabel: "Preflop",
+    pot: 0,
+  });
   const [actionCount, setActionCount] = useState(0);
   const [handResult, setHandResult] = useState<string | null>(null);
   const [isShowdown, setIsShowdown] = useState(false);
@@ -82,13 +91,11 @@ export function PokerTable({ roomCode, roomId, gameId, playerName, onLeave }: Po
   useEffect(() => {
     if (!gameId) return;
 
-    const nextPokerState = createPokerTableView({ playerNames: [playerName || "Tú", "Ana", "Luis"], seed: gameId, pot: 0 });
-    setPokerState(nextPokerState);
-    setCurrentTurnName(nextPokerState.currentTurnName);
+    setCurrentTurnName("");
     setRoundStage("preflop");
     setRoundLabel("Preflop");
     setActionCount(0);
-    setActivePlayerName(nextPokerState.currentTurnName);
+    setActivePlayerName(playerName || "Tú");
 
     let isCanceled = false;
     let refreshVersion = 0;
@@ -139,11 +146,16 @@ export function PokerTable({ roomCode, roomId, gameId, playerName, onLeave }: Po
           setIsShowdown(nextIsShowdown);
           setHandResult(result.game.resultMessage ?? null);
           if (nextIsShowdown) {
-            const winners = getWinningPlayers(
-              (Array.isArray(result.players) ? result.players : []).map((player) => ({ id: player.id, name: player.name, hand: Array.isArray(player.hand) ? player.hand : [] })),
-              Array.isArray(result.game.communityCards) ? result.game.communityCards : []
-            );
-            setShowdownSummary(winners.length > 0 ? `${winners.map((winner) => winner.name).join(" y ")} gana con ${winners[0].evaluation.label}.` : "La mano terminó sin un ganador claro.");
+            const fallbackSummary = result.game.resultMessage
+              ? result.game.resultMessage
+              : (() => {
+                  const winners = getWinningPlayers(
+                    (Array.isArray(result.players) ? result.players : []).map((player) => ({ id: player.id, name: player.name, hand: Array.isArray(player.hand) ? player.hand : [] })),
+                    Array.isArray(result.game.communityCards) ? result.game.communityCards : []
+                  );
+                  return winners.length > 0 ? `${winners.map((winner) => winner.name).join(" y ")} gana con ${winners[0].evaluation.label}.` : "La mano terminó sin un ganador claro.";
+                })();
+            setShowdownSummary(fallbackSummary);
           } else {
             setShowdownSummary(null);
           }
@@ -248,8 +260,15 @@ export function PokerTable({ roomCode, roomId, gameId, playerName, onLeave }: Po
       setActivePlayerName(nextTurnName);
       setRoundStage(nextStage);
       setRoundLabel(nextRoundLabel);
-      setIsShowdown(Boolean(result.game.status && result.game.status === "finished"));
-      setHandResult((result.game as { resultMessage?: string }).resultMessage ?? null);
+      const nextIsShowdown = Boolean(result.game.status && result.game.status === "finished");
+      setIsShowdown(nextIsShowdown);
+      const nextResultMessage = (result.game as { resultMessage?: string }).resultMessage ?? null;
+      setHandResult(nextResultMessage);
+      if (nextIsShowdown) {
+        setShowdownSummary(nextResultMessage ?? `La mano terminó sin un ganador claro.`);
+      } else {
+        setShowdownSummary(null);
+      }
       setRoundNotice(nextRoundLabel !== roundLabel ? `Ronda ${nextRoundLabel}: ${getRoundDescription(nextRoundLabel)}` : null);
       setBettingHistory((current) => {
         const nextEntry = actionName === "raise"
