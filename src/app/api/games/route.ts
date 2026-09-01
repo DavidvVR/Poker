@@ -2,6 +2,36 @@ import { NextRequest, NextResponse } from "next/server";
 import { buildDealtPokerState, getHandSetup, getRoundLabel, getRoundStageFromActionCount, getShowdownResultMessage } from "@/lib/poker";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+async function getSharedCommunityCards(adminClient: ReturnType<typeof createAdminClient>, gameId: string, dealerPosition: number) {
+  const { data: gameRow, error: gameRowError } = await adminClient
+    .from("games")
+    .select("room_id")
+    .eq("id", gameId)
+    .single();
+
+  if (gameRowError || !gameRow?.room_id) {
+    return [];
+  }
+
+  const { data: roomPlayers, error: playersError } = await adminClient
+    .from("room_players")
+    .select("user_id, profiles(full_name)")
+    .eq("room_id", gameRow.room_id)
+    .order("seat");
+
+  if (playersError || !roomPlayers) {
+    return [];
+  }
+
+  const playerNames = roomPlayers.map((row, index) => {
+    const profileName = ((row as { profiles?: { full_name?: string | null } }).profiles?.full_name)?.trim();
+    return profileName || `Jugador ${index + 1}`;
+  });
+  const dealtState = buildDealtPokerState({ playerNames, seed: `${gameId}-${dealerPosition ?? 0}`, pot: 0 });
+
+  return dealtState.communityCards;
+}
+
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
 
@@ -390,6 +420,7 @@ export async function GET(request: NextRequest) {
       createdAt: (row as { created_at?: string }).created_at ?? "",
     })).reverse();
     const resultMessage = getShowdownResultMessage(actions);
+    const communityCards = await getSharedCommunityCards(adminClient, gameId, gameData.dealer_position ?? 0);
 
     return NextResponse.json({
       game: {
@@ -405,7 +436,7 @@ export async function GET(request: NextRequest) {
         roundStage,
         roundLabel,
         actionCount: normalizedActionCount,
-        communityCards: [],
+        communityCards,
         resultMessage,
       },
       players,

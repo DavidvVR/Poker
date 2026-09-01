@@ -38,14 +38,13 @@ const createSeed = (value: string) => {
   return Math.abs(hash);
 };
 
-const getRandomIndex = (max: number) => {
-  if (typeof globalThis !== "undefined" && typeof globalThis.crypto?.getRandomValues === "function") {
-    const buffer = new Uint32Array(1);
-    globalThis.crypto.getRandomValues(buffer);
-    return buffer[0] % max;
-  }
+const createSeededRandom = (seed: string) => {
+  let state = createSeed(seed);
 
-  return Math.floor(Math.random() * max);
+  return () => {
+    state = (state * 1664525 + 1013904223) % 4294967296;
+    return state / 4294967296;
+  };
 };
 
 const createDeck = () => VALUES.flatMap((value) => SUITS.map((suit) => ({ value, suit, label: `${value}${suit}` })));
@@ -53,10 +52,10 @@ const createDeck = () => VALUES.flatMap((value) => SUITS.map((suit) => ({ value,
 export const shuffleDeck = (seed: string) => {
   const deck = createDeck();
   const shuffled = [...deck];
-  const randomSeed = createSeed(seed);
+  const random = createSeededRandom(seed);
 
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const swapIndex = (randomSeed + getRandomIndex(index + 1) + index) % (index + 1);
+    const swapIndex = Math.floor(random() * (index + 1));
     [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
   }
 

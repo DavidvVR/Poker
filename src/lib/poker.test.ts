@@ -133,12 +133,12 @@ test("en heads-up el dealer pone la ciega pequeña", () => {
   assert.equal(setup.firstTurnIndex, 0);
 });
 
-test("genera manos distintas incluso cuando el seed coincide", () => {
+test("reparte igual para un mismo seed en distintas llamadas", () => {
   const firstHand = buildDealtPokerState({ playerNames: ["Ana", "Luis"], seed: "same-seed", pot: 0 });
   const secondHand = buildDealtPokerState({ playerNames: ["Ana", "Luis"], seed: "same-seed", pot: 0 });
 
-  assert.notDeepEqual(firstHand.players[0].hand, secondHand.players[0].hand);
-  assert.notDeepEqual(firstHand.communityCards, secondHand.communityCards);
+  assert.deepEqual(firstHand.players[0].hand, secondHand.players[0].hand);
+  assert.deepEqual(firstHand.communityCards, secondHand.communityCards);
 });
 
 test("extrae el mensaje de showdown desde las acciones persistidas", () => {
