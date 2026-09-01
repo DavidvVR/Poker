@@ -19,6 +19,9 @@ Permitir que un grupo de amigos pueda:
 
 ---
 
+
+
+
 ## Stack recomendado
 
 - Frontend: Next.js + TypeScript + React
